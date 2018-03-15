@@ -8,9 +8,12 @@
 #define S3 45
 #define sensorOut 3
 
-int color;
+int color = 0;  //1 = kırmızı, 2 = sarı, 3 = yeşil
+int redFrequency = 0;
 int greenFrequency = 0;
+int blueFrequency = 0;
 
+int siyahsayac = 0;
 
 //QTR RC
 #define NUM_SENSORS   8     // number of sensors used
@@ -20,16 +23,15 @@ int greenFrequency = 0;
 QTRSensorsRC qtrrc((unsigned char[]) {30, 31, 32, 33, 34, 35, 36, 37}, NUM_SENSORS, TIMEOUT, EMITTER_PIN); 
 unsigned int sensorValues[NUM_SENSORS];
 
-int beyazcizgi = 0;
-
 int position = 0;
-
+int beyazcizgi = 0;
 int tercih;
+int distance = 0;
 
 //motors
-int eA = 12;                //motor A pow00000000000
-int pA1 = 11;               //motor A direction 1 pin
-int pA2 = 10;               //motor A direction 2 pin
+int eA = 12;                //motor A power pin
+int pA1 = 10;               //motor A direction 1 pin
+int pA2 = 11;               //motor A direction 2 pin
 int eB = 7;                 //motor B power pin
 int pB1 = 6;                //motor B direction 1 pin
 int pB2 = 5;                //motor B direction 2 pin
@@ -59,19 +61,6 @@ void setup()
     qtrrc.calibrate();       
   }
   digitalWrite(13, LOW);    
-
-  pinMode(S0, OUTPUT);
-  pinMode(S1, OUTPUT);
-  pinMode(S2, OUTPUT);
-  pinMode(S3, OUTPUT);
-
-  pinMode(sensorOut, INPUT);
-
-  // Setting frequency scaling to 20%
-  digitalWrite(S0,HIGH);
-  digitalWrite(S1,LOW);
-  
-  Serial.begin(9600);
   for (int i = 0; i < NUM_SENSORS; i++){
     Serial.print(qtrrc.calibratedMinimumOn[i]);
     Serial.print(' ');
@@ -86,51 +75,70 @@ void setup()
   Serial.println();
   delay(1000);
 
+  pinMode(S0, OUTPUT);
+  pinMode(S1, OUTPUT);
+  pinMode(S2, OUTPUT);
+  pinMode(S3, OUTPUT);
+  pinMode(sensorOut, INPUT);
+  
+  digitalWrite(S0,HIGH);
+  digitalWrite(S1,LOW);
+  
   pinMode(eA, OUTPUT);
   pinMode(pA1, OUTPUT);
   pinMode(pA2, OUTPUT);
   pinMode(eB, OUTPUT);
-  pinMode(pB1, OUTPUT);pinMode(pB2, OUTPUT);
+  pinMode(pB1, OUTPUT);
+  pinMode(pB2, OUTPUT);
+
+  Serial.begin(9600);
 } 
 
 
 
 void loop(){
-unsigned int distance = 252;/*sensor.getDist();*/
-while(distance > 250){
-   //Get distance from sensor
-  distance = sensor3.getDist();
-
-  
+forward();
+if(beyazcizgi == 0){
+  analogWrite(eA, 120);
+  analogWrite(eB, 120);
   delay(50);
-  position = qtrrc.readLine(sensorValues);
-  
-  for (unsigned char i = 0; i < NUM_SENSORS; i++){
-    Serial.print(sensorValues[i]);
-    Serial.print('\t');
-  }        
- 
-  Serial.println(position); // comment this line out if you are using raw values
-  delay(250);
-  cizgitakip();
-  }
+  beyazcizgi++;
+}
+cizgitakip();
 }
 
 
 void cizgitakip(){
-  if(position <= 3100  && position >= 3900){
-    analogWrite(eA, 128);
-    analogWrite(eB, 128);
+//  siyahsayac = 0;
+//  for(int i = 0; i <= 7; i++){
+//    if(sensorValues[i] == 1000){
+//      siyahsayac++;
+//      }
+//    }
+  forward();
+  position = qtrrc.readLine(sensorValues); 
+    for (unsigned char i = 0; i < NUM_SENSORS; i++){
+    Serial.print(sensorValues[i]);
+    Serial.print('\t');
+  }        
+ 
+  Serial.print(position); // comment this line out if you are using raw values
+  delay(250);
+  Serial.println('\t');
+  
+  if(position <= 4000  && position >= 3000){
+    analogWrite(eA, 30);
+    analogWrite(eB, 30);
     }
-  else if(position > 3900){
-    analogWrite(eA, 128);
-    analogWrite(eB, 64);
+  else if(position > 4000){
+    analogWrite(eA, 40);
+    analogWrite(eB, 30);
     }
   else{
-    analogWrite(eA, 64);
-    analogWrite(eB, 128);
+    analogWrite(eA, 30);
+    analogWrite(eB, 40);
     }
-  }
+}
 
 
 void forward(){
@@ -148,16 +156,6 @@ void backward(){
 }
 
 void left(int dsure){
-  digitalWrite(pA1, HIGH);
-  digitalWrite(pA2, LOW);
-  digitalWrite(pB1, LOW);
-  digitalWrite(pB2, HIGH);
-  analogWrite(eA, 50);
-  analogWrite(eB, 50);
-  delay(dsure);
-}
-
-void right(int dsure){
   digitalWrite(pB1, HIGH);
   digitalWrite(pB2, LOW);
   digitalWrite(pA1, LOW);
@@ -165,6 +163,18 @@ void right(int dsure){
   analogWrite(eA, 50);
   analogWrite(eB, 50);
   delay(dsure);
+  forward();
+}
+
+void right(int dsure){
+  digitalWrite(pA1, HIGH);
+  digitalWrite(pA2, LOW);
+  digitalWrite(pB1, LOW);
+  digitalWrite(pB2, HIGH);
+  analogWrite(eA, 50);
+  analogWrite(eB, 50);
+  delay(dsure);
+  forward();
 }
 
 void coast(){
@@ -173,8 +183,10 @@ void coast(){
 }
 
 void breaks(){
-  digitalWrite(eA, HIGH);
-  digitalWrite(eB, HIGH);
+  digitalWrite(pA1, HIGH);
+  digitalWrite(pA2, HIGH);
+  digitalWrite(pB1, HIGH);
+  digitalWrite(pB2, HIGH);
 }
 
 void asama2() {
@@ -184,7 +196,7 @@ bool solserit = false;
 
 int seritsayaci = 0;
 
-while(position != 7000){
+while(siyahsayac != 8){
 
 
 if(sensor2.getDist() > 400 && seritsayaci <= 2){      // sharp'lar için girile sınır değerler rastgeledir şu anda.
@@ -244,57 +256,60 @@ switch (sagserit){
 
 
 void asama1(){
-
-while (position != 7000){
+forward();
+while (1){
   cizgitakip();
 }  
+
+analogWrite(eA, 50);
+analogWrite(eB, 50);
+delay(200);
 
 left(400);
 
-while (position != 7000){
+while (siyahsayac != 8){
   cizgitakip();
 }  
-analogWrite(eA, 150);
-analogWrite(eB, 150);
+analogWrite(eA, 50);
+analogWrite(eB, 50);
 delay(200);
 
 renkoku();
 
-if(color == 2){
-while (position != 7000){
+if(color == 3){
+while (siyahsayac != 8){
   cizgitakip();
   }  
-while (position != 7000){
+while (siyahsayac != 8){
   cizgitakip();
   }  
 }
 else{
   while(beyazcizgi != 2){
-  analogWrite(eA, 150);
-  analogWrite(eB, 150);
+  backward();
+  analogWrite(eA, 70);
+  analogWrite(eB, 70);
   
   if(position == 7000){
   beyazcizgi++;
-  }
-  }
-}
-
-right(200);
+    }
+   }
+  right(200);
 
 
 
-
+forward();
 analogWrite(eA, 150);
 analogWrite(eB, 150);
 delay(50);
 
 renkoku();
 
-if(color == 2){
-  while (position != 7000){
+if(color == 3){
+  while (siyahsayac != 8){
   cizgitakip();
   }  
-  while (position != 7000){
+  while (siyahsayac != 8){
   cizgitakip();
   }  
 }
@@ -306,30 +321,33 @@ else{
   
   if(position == 7000){
   beyazcizgi++;
-  }
-  }
+   }
+ }
+ right(400);
+
+
+while (siyahsayac != 8){
+  cizgitakip();
+}  
+while (siyahsayac != 8){
+  cizgitakip();
+}  
+while (siyahsayac != 8){
+  cizgitakip();
+}  
+}
 }
 
-right(400);
 
-beyazcizgi = 0;
 
-while (position != 7000){
-  cizgitakip();
-}  
-while (position != 7000){
-  cizgitakip();
-}  
-while (position != 7000){
-  cizgitakip();
-}  
+
 
 }
 
 void asama3() {
 tercih = millis() % 2;
 
-while(position != 7000){
+while(siyahsayac != 8){
   cizgitakip();
   }
 
@@ -342,7 +360,7 @@ else{
   }
 
 
-while(position != 7000){
+while(siyahsayac != 8){
   cizgitakip();
   }
 
@@ -351,13 +369,44 @@ analogWrite(eB, 150);
 delay(1000);
 
 }
-void renkoku(){
-  digitalWrite(S2,HIGH);
-  digitalWrite(S3,HIGH);
-  greenFrequency = pulseIn(sensorOut, LOW);
-  
-  // Printing the GREEN (G) value
-  Serial.print(" G = ");
-  Serial.print(greenFrequency);
-  delay(100);
+int renkoku(){
+  // Setting RED (R) filtered photodiodes to be read
+digitalWrite(S2,LOW);
+digitalWrite(S3,LOW);
+
+// Reading the output frequency
+redFrequency = pulseIn(sensorOut, LOW);
+
+// Printing the RED (R) value
+Serial.print("R = ");
+Serial.print(redFrequency);
+delay(100);
+
+// Setting GREEN (G) filtered photodiodes to be read
+digitalWrite(S2,HIGH);
+digitalWrite(S3,HIGH);
+
+// Reading the output frequency
+greenFrequency = pulseIn(sensorOut, LOW);
+
+// Printing the GREEN (G) value
+Serial.print(" G = ");
+Serial.print(greenFrequency);
+delay(100);
+
+
+if(20 <= redFrequency && redFrequency <= 30 && 80 <= greenFrequency && greenFrequency <= 100){
+  color = 1;
+  Serial.println("RED Detected!   ");
   }
+else if(15 <= redFrequency && redFrequency <= 25 && 25 <= greenFrequency && greenFrequency <= 35){
+  color = 2;
+  Serial.println("YELLOW Detected!   ");
+  }
+else{
+   color = 3;
+  Serial.println("GREEN Detected!   ");
+  }
+  Serial.print(color);
+return color;
+}
