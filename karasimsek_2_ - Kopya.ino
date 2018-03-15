@@ -1,3 +1,4 @@
+//bismillahirrahmanirrahim
 #include <QTRSensors.h>
 #include <SharpDistSensor.h>
 
@@ -96,17 +97,38 @@ void setup()
 
 
 void loop(){
-  if(sensor3.getDist() > 500){
-    cizgitakip();
-  }
-  else{
-    breaks();
-  }
-  
+forward();
+analogWrite(eA,60);
+analogWrite(eB,60);
+//if(beyazcizgi == 0){
+//  analogWrite(eA, 60);
+//  analogWrite(eB, 60);
+//  delay(30);
+//  beyazcizgi++;
+//}
+//cizgitakip();
+//asama2();
+
 }
 
 
 void cizgitakip(){
+//  siyahsayac = 0;
+//  for(int i = 0; i <= 7; i++){
+//    if(sensorValues[i] == 1000){
+//      siyahsayac++;
+//      }
+//    }
+//  if(siyahsayac >= 3){
+//    if(position > 3500){
+//      analogWrite(eB, 45);
+//      delay(500);
+//    }
+//    else{
+//      analogWrite(eA, 45);
+//      delay(500);
+//    }
+//  }
   forward();
   position = qtrrc.readLine(sensorValues); 
     for (unsigned char i = 0; i < NUM_SENSORS; i++){
@@ -118,18 +140,30 @@ void cizgitakip(){
   delay(250);
   Serial.println('\t');
   
-  if(position <= 4000  && position >= 3000){
-    analogWrite(eA, 45);
-    analogWrite(eB, 45);
+//  if(position <=   && position >= 1500){
+//    analogWrite(eA, 50);
+//    analogWrite(eB, 50);
+//    }
+   if(5000<= position && position <=7000){
+    analogWrite(eA, 70);
+    analogWrite(eB, 50);
     }
-  else if(position > 4000){
-    analogWrite(eA, 65);
-    analogWrite(eB, 45);
+   if(3500<= position && position <5000)
+   {
+    analogWrite(eA, 60);
+    analogWrite(eB, 50);
     }
-  else{
-    analogWrite(eA, 45);
-    analogWrite(eB, 65);
+    if(2000<= position && position <3500)
+   {
+    analogWrite(eA, 50);
+    analogWrite(eB, 60);
     }
+    if(0<= position&& position <2000)
+   {
+    analogWrite(eA, 50);
+    analogWrite(eB, 70);
+    }
+    
 }
 
 
@@ -182,18 +216,31 @@ void breaks(){
 }
 
 int asama2(){
-  while(position != 7000){
-    if(sensor3.getDist() > 900){
+  while(true){
+    if(sensor3.getDist() < 900){
       if(sensor2.getDist() > 900 && serit > -2){
-        sola gec
+        left(450);
+        while(sensorValues[0] < 700){
+          analogWrite(eA, 45);
+          analogWrite(eB, 45);
+        }
+        cizgitakip();
         serit--;
         asama2();
       }
-      else if(sensor4.getDist() > 900 && serit < 2){
-        saga gec
+     else if(sensor4.getDist() > 900 && serit < 2){
+        right(450);
+        while(sensorValues[8] < 700){
+          analogWrite(eA, 45);
+          analogWrite(eB, 45);
+        }
+        cizgitakip();
         serit++;
         asama2();
       }
+    }
+    else { 
+      cizgitakip();
     }
   }
   return 0;
